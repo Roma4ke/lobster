@@ -1,111 +1,186 @@
+import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:slide_countdown_clock/slide_countdown_clock.dart';
+import 'package:intl/intl.dart';
 
-void main() => runApp(MyApp());
+const img = 'assets/images/';
+const title = TextStyle(color: Colors.white, fontSize: 36, letterSpacing: 13.0, fontWeight: FontWeight.w600);
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+void main() {
+  runApp(MaterialApp(
+    theme: ThemeData(fontFamily: 'Nunito'),
+    debugShowCheckedModeBanner: false,
+    home: HomeRoute(),
+  ));
+}
+
+class HomeRoute extends StatelessWidget {
+  row(s1, s2, context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [soundBtn(s1, context), soundBtn(s2, context),],
+    );
+  }
+
+  soundBtn(sound, context) {
+    return GestureDetector(
+      onTap: () { Navigator.push(context, MaterialPageRoute(builder: (context) => PlayRoute(sound: sound))); },
+      child: Column(
+        children: [
+          Image.asset('assets/icons/$sound.png'),
+          Text(sound.toUpperCase(), style: TextStyle(color: Colors.white, fontSize: 16, letterSpacing: 3.0))
+        ],
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+    );
+  }
+
+  showTimer(timer,sound, context){
+    return  SlideCountdownClock(
+      duration: timer,
+      slideDirection: SlideDirection.Down,
+      separator: ":",
+      textStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+      onDone: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => PlayRoute(sound: sound)));
+      },
+    );
+  }
+
+  @override
+  build(BuildContext context) {
+    var width = MediaQuery.of(context).size.width;
+    DateTime now = DateTime.now();
+    DateFormat dateFormat = DateFormat("yyyy-MM-dd HH:mm:ss");
+    DateTime eventTime = dateFormat.parse("2019-08-18 16:50:00");
+    //String eventTime = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+    int difference = eventTime.difference(now).inSeconds;
+
+    Duration _duration = Duration(seconds: difference);
+    GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
+
+
+
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned(top: 0, left: 0, child: Image.asset(img + 'bkgnd_2.jpg')),
+          Positioned(top: 115, width: width, child: Center(child: Text('LOBSTER', style: title))),
+          Positioned(top: 165, width: width, child: Center(child: showTimer(_duration,'forest',context))),
+          Positioned(top: 250, width: width, child: Column(children: [row('rain', 'forest', context), row('sunset', 'ocean', context)],)
+          ),
+        ],
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class PlayRoute extends StatefulWidget {
+  final String sound;
+  const PlayRoute({Key key, this.sound}) : super(key: key);
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _PlayRouteState createState() => _PlayRouteState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _PlayRouteState extends State<PlayRoute> {
+  AudioPlayer player;
+  AudioCache cache;
+  bool initialPlay = true;
+  bool playing;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  initState() {
+    super.initState();
+    player = new AudioPlayer();
+    cache = new AudioCache(fixedPlayer: player);
   }
 
   @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+  dispose() {
+    super.dispose();
+    player.stop();
+  }
+
+  playPause(sound) {
+    if (initialPlay) {
+      cache.play('audio/$sound.mp3');
+      playing = true;
+      initialPlay = false;
+    }
+    return IconButton(
+      color: Colors.white70, iconSize: 80.0, icon: playing ? Icon(Icons.pause_circle_filled) : Icon(Icons.play_circle_filled),
+      onPressed: () {
+        setState(() {
+          if (playing) {
+            playing = false;
+            player.pause();
+          } else {
+            playing = true;
+            player.resume();
+          }
+        });
+      },
+    );
+  }
+
+  @override
+  build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      body: Stack(
+        children: [
+          Positioned(top: 0, left: 0, child: Background(sound: widget.sound)),
+          Positioned(top: 0, left: 0, right: 0, child: AppBar(backgroundColor: Colors.transparent, elevation: 0)),
+          Padding(padding: const EdgeInsets.only(top: 180.0),
+              child: Center(
+                  child: Column(children: [Text(widget.sound.toUpperCase(), style: title), playPause(widget.sound)])
+              )
+          ),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class Background extends StatefulWidget {
+  final String sound;
+  const Background({Key key, this.sound}) : super(key: key);
+  @override
+  _BackgroundState createState() => _BackgroundState();
+}
+
+class _BackgroundState extends State<Background> {
+  Timer timer;
+  bool _visible = false;
+
+  @override
+  dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  swap() {
+    if (mounted) {
+      setState(() { _visible = !_visible;
+      });
+    }
+  }
+
+  @override
+  build(BuildContext context) {
+    timer = Timer(Duration(seconds: 6), swap);
+    return Stack(
+      children: [
+        Image.asset(img + widget.sound + '_1.jpg'),
+        AnimatedOpacity(
+            child: Image.asset(img + widget.sound + '_2.jpg'),
+            duration: Duration(seconds: 2),
+            opacity: _visible ? 1.0 : 0.0)
+      ],
     );
   }
 }
