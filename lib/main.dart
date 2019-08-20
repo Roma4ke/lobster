@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:slide_countdown_clock/slide_countdown_clock.dart';
 import 'package:intl/intl.dart';
-
 const img = 'assets/images/';
 const title = TextStyle(color: Colors.white, fontSize: 36, letterSpacing: 13.0, fontWeight: FontWeight.w600);
 
