@@ -1,21 +1,125 @@
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audio_cache.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:slide_countdown_clock/slide_countdown_clock.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lobster/model/Event.dart';
+import 'package:lobster/eventUi.dart';
+
 const img = 'assets/images/';
 const title = TextStyle(color: Colors.white, fontSize: 36, letterSpacing: 13.0, fontWeight: FontWeight.w600);
 
-void main() {
+Future<Null> main() async {
+  _currentUser = await _signInAnonymously();
+
+
   runApp(MaterialApp(
-    theme: ThemeData(fontFamily: 'Nunito'),
+
+    theme: ThemeData(
+      // Define the default brightness and colors.
+      brightness: Brightness.dark,
+      primaryColor: Colors.white,
+      fontFamily: 'Nunito',
+
+      textTheme: TextTheme(
+        headline: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold),
+        title: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
+        body1: TextStyle(fontSize: 14.0),
+      ),
+    ),
     debugShowCheckedModeBanner: false,
-    home: HomeRoute(),
+    home: EventPage(user: _currentUser),
   ));
+
 }
 
-class HomeRoute extends StatelessWidget {
+FirebaseUser _currentUser;
+final FirebaseAuth _auth = FirebaseAuth.instance;
+
+
+// Example code of how to sign in anonymously.
+Future<FirebaseUser> _signInAnonymously() async {
+  final FirebaseUser user = (await _auth.signInAnonymously()).user;
+  assert(user != null);
+  assert(user.isAnonymous);
+  assert(!user.isEmailVerified);
+
+  final FirebaseUser currentUser = await _auth.currentUser();
+
+  return currentUser;
+}
+
+
+class EventPage extends StatefulWidget {
+  final FirebaseUser user;
+
+
+  EventPage({Key key, this.user}) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => _EventPageState();
+}
+
+class _EventPageState extends State<EventPage> {
+  final databaseReference = Firestore.instance;
+  List<Event> events = [];
+  bool noData = true;
+
+  initState() {
+    super.initState();
+    // Add listeners to this class
+    this.getData();
+  }
+
+  void getData() {
+
+    databaseReference.collection('events').getDocuments()
+        .then((QuerySnapshot snapshot){
+
+          events = snapshot.documents.map(Event.fromDocument).toList();
+          setState(() {
+            this.events = events;
+          });
+
+
+        });
+
+
+
+
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xff262626),
+      body: this.noData ? EventDetailsPage(event: this.events[0]) : NoEventsMessage(),
+
+    );
+  }
+}
+
+class NoEventsMessage extends StatelessWidget {
+
+  @override
+  build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Text("No upcoming events",
+          style: new TextStyle(
+            fontSize: 24.0, fontWeight: FontWeight.bold, color: Colors.white),),
+       ),
+    );
+  }
+}
+
+
+class HomePage extends StatelessWidget {
+
   row(s1, s2, context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -55,7 +159,7 @@ class HomeRoute extends StatelessWidget {
     var width = MediaQuery.of(context).size.width;
     DateTime now = DateTime.now();
     DateFormat dateFormat = DateFormat("yyyy-MM-dd HH:mm:ss");
-    DateTime eventTime = dateFormat.parse("2019-08-18 16:50:00");
+    DateTime eventTime = dateFormat.parse("2019-08-20 16:50:00");
     //String eventTime = DateFormat('yyyy-MM-dd – kk:mm').format(now);
     int difference = eventTime.difference(now).inSeconds;
 

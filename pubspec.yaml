@@ -29,6 +29,7 @@ dependencies:
   firebase_core: ^0.4.0+8
   firebase_auth: ^0.14.0+2
   cloud_firestore: ^0.12.9
+  flutter_svg: 0.13.1
 
 dev_dependencies:
   flutter_test:
@@ -60,6 +61,7 @@ flutter:
       fonts:
         - asset: fonts/Nunito-Regular.ttf
         - asset: fonts/Nunito-SemiBold.ttf
+        - asset: fonts/Nunito-Bold.ttf
           weight: 600
 
   # An image asset can refer to one or more resolution-specific "variants", see
