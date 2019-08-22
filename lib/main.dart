@@ -8,13 +8,13 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lobster/model/Event.dart';
 import 'package:lobster/eventUi.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const img = 'assets/images/';
 const title = TextStyle(color: Colors.white, fontSize: 36, letterSpacing: 13.0, fontWeight: FontWeight.w600);
 
 Future<Null> main() async {
   _currentUser = await _signInAnonymously();
-
 
   runApp(MaterialApp(
 
@@ -38,6 +38,8 @@ Future<Null> main() async {
 
 FirebaseUser _currentUser;
 final FirebaseAuth _auth = FirebaseAuth.instance;
+
+
 
 
 // Example code of how to sign in anonymously.
@@ -97,7 +99,7 @@ class _EventPageState extends State<EventPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xff262626),
-      body: this.noData ? EventDetailsPage(event: this.events[0]) : NoEventsMessage(),
+      body: this.noData && this.events.length !=0 ? EventDetailsPage(event: this.events[0]) : NoEventsMessage(),
 
     );
   }
